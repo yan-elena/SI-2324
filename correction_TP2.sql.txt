@@ -1,0 +1,208 @@
+
+--- 1. affichez la structure et le contenu des table ecrivain, genre, localisation
+
+desc ecrivain;
+select *
+from ecrivain;
+
+desc genre;
+select *
+from genre;
+
+desc localisation;
+select *
+from localisation;
+
+-- affichez les écrivains, auteurs dans le genre 'Horreur'
+
+-- v1
+select pnom || ' '|| upper(enom), g.gnom
+from ecrivain e, genre g
+where e.genre_id = g.idgenre
+and gnom = 'Horreur';
+
+--v2
+select pnom || ' '|| upper(enom), g.gnom
+from ecrivain e
+join genre g
+on e.genre_id = g.idgenre
+where gnom = 'Horreur';
+
+-- affichez les couples d'écrivain qui on le même prénom, puis les couples le même début de prénom (les deux premières lettres) (utilisez la fonction SUBSTR)
+
+select e1.pnom || ' '|| upper(e1.enom), e2.pnom || ' '|| upper(e2.enom)
+from sys.ecrivain e1, sys.ecrivain e2
+where e1.pnom = e2.pnom
+and e1.idecr < e2.idecr;
+-- Honoré
+
+select e1.pnom || ' '|| upper(e1.enom), e2.pnom || ' '|| upper(e2.enom)
+from sys.ecrivain e1, sys.ecrivain e2
+where substr(e1.pnom, 1, 2) = substr(e2.pnom, 1, 2)
+and e1.idecr < e2.idecr;
+-- qq couples
+
+SELECT substr('totoro', 1, 3)
+from dual;
+
+-- affichez les écrivains qui n'ont pas de genre littéraire associé
+
+select *
+from ecrivain
+where genre_id is null;
+
+-- affichez pour chaque écrivain son genre littéraire en toutes lettres
+
+select pnom || ' '|| upper(enom), g.gnom
+from ecrivain e, genre g
+where e.genre_id = g.idgenre;
+
+ -- avez vous tous les écrivains ? 
+ -- réponse : non. 
+ -- si la réponse est non, affichez la liste de tous les écrivains, suivis, éventuellement de leur genre littéraire
+ 
+ --v1
+select pnom || ' '|| upper(enom), g.gnom
+from ecrivain e, genre g
+where e.genre_id = g.idgenre (+);
+
+--v2 avec LEFT JOIN
+select pnom || ' '|| upper(enom), g.gnom
+from ecrivain e
+LEFT JOIN genre g
+on e.genre_id = g.idgenre;
+
+--v2 avec RIGHT JOIN
+select pnom || ' '|| upper(enom), g.gnom
+from genre g 
+RIGHT JOIN  ecrivain e
+on e.genre_id = g.idgenre;
+
+-- Affichez dans la liste finale du point précédent uniquement les écrivains né en France
+
+ --v1
+select pnom || ' '|| upper(enom), g.gnom, e.pays_n
+from ecrivain e, genre g
+where e.genre_id = g.idgenre (+)
+and pays_n = 'France';
+
+--v2 avec JOIN
+select pnom || ' '|| upper(enom), g.gnom, e.pays_n
+from ecrivain e
+LEFT JOIN genre g
+on e.genre_id = g.idgenre
+where pays_n = 'France';
+
+-- affichez la liste des toutes localisations suivi les genres littériares 
+
+select l.idloc, l.lnom, g.gnom
+from localisation l, genre g
+where l.idloc = g.loc_id;
+
+--- si on veut ne pas avoir des répétitions de ligne (hors cadre du cours)
+select l.idloc, l.lnom, LISTAGG(g.gnom, ',') WITHIN GROUP (order by g.gnom) AS genres
+from localisation l, genre g
+where l.idloc = g.loc_id
+group by l.idloc, l.lnom;
+
+-- Affichez avec une requête imbriquée les écrivains dont le genre littéraire est situé aux Amériques (Nord ou Sud)
+
+-- les localisations aux Amériques
+
+select *
+from localisation where lnom like 'Amériq%';
+
+
+select e.pnom, e.enom, g.gnom
+from ecrivain e, genre g
+where e.genre_id = g.idgenre and
+g.loc_id in (select idloc
+            from localisation where lnom like 'Amériq%');
+
+-- Reprenez la requête du point précédent dans une requête imbriquée
+
+select e.pnom, e.enom, g.gnom
+from ecrivain e, genre g, localisation l
+where e.genre_id = g.idgenre and
+g.loc_id = l.idloc
+and lnom like 'Amériq%';
+
+-- V2 JOIN
+
+select e.pnom, e.enom, g.gnom
+from ecrivain e
+join genre g
+on e.genre_id = g.idgenre 
+join localisation l
+on g.loc_id = l.idloc
+where lnom like 'Amériq%';
+
+-- Affichez pour chaque pays de naissance le nombre d'écrivain qui y sont nés.
+
+select pays_n, count(*)
+from ecrivain 
+group by pays_n; 
+
+--triez la liste obtenue en ordre décroissant
+
+select pays_n, count(*)
+from ecrivain 
+group by pays_n
+order by 1;
+
+-- Affichez les pays de naissance qui apparaissent une seule fois dans la base
+
+select pays_n, count(*)
+from ecrivain 
+group by pays_n 
+having count(*) = 1;
+
+-- ré-écrivez la requête précédente sans utiliser une fonction agrégat mais la condition EXISTS or NOT EXISTS
+
+select pays_n
+from ecrivain e
+where not exists (select *
+                  from ecrivain e2
+                  where e2.idecr != e.idecr and
+                  e2.pays_n = e.pays_n);
+                  
+-- Affichez pour chaque localisation le nombre de genres littéraires distincts, le nombre d'écrivains qui y sont rattachés et le nombre total de livres vendus.
+--v1
+select lnom, count(distinct gnom)as nb_genres, count(idecr) as nb_ecrivains, sum(livres_vendus) as total_livres
+from localisation, genre, ecrivain
+where idloc = loc_id
+and idgenre = genre_id
+group by lnom; 
+
+-- v2
+select lnom, count(distinct gnom)as nb_genres, count(idecr) as nb_ecrivains, sum(livres_vendus) as total_livres
+from localisation join
+genre
+on idloc = loc_id
+join ecrivain
+on idgenre = genre_id
+group by lnom; 
+
+-- Affichez les localisation, suivi du nom des genres litéraires, le nombre d'écrivains et le total des livres vendus, tenant compre des  genres qui ne sont pas rattachés à une localisation et aussi des écrivains qui n'ont pas de genre
+--(syntaxe FULL OUTER JOIN)
+
+select lnom, gnom, count(idecr) as nb_ecrivains, sum(livres_vendus) as total_livres
+from localisation 
+full outer join genre
+on idloc = loc_id
+full outer join ecrivain
+on idgenre = genre_id
+group by lnom, gnom; 
+
+-- vérifiez que la requête précédente est correcte (tous les acrivains ont bien  été comptés).Affichez 'oui' ou rien.
+
+
+select 'oui' as reponse
+from (select lnom, gnom, count(idecr) as nb_ecrivains, sum(livres_vendus) as total_livres
+from localisation 
+full outer join genre
+on idloc = loc_id
+full outer join ecrivain
+on idgenre = genre_id
+group by lnom, gnom) t
+having sum(t.nb_ecrivains) = (select count(*) from ecrivain) ;

@@ -1,0 +1,149 @@
+
+/* Travaillez en mode AUTOCOMMIT ON */
+set AUTOCOMMIT on;
+
+/* 1. créez votre propre table écrivain comme une copie de la table sys.ecrivain que vous avez utilisée */
+
+drop table ecrivain cascade constraints;
+create table ecrivain as
+select *
+from ecrivain;
+
+/* 2. Vérifiez si votre table a des clés primaires ou étrangères */
+
+-- réponse non
+
+/* 3. Rajouter les contraintes référentielle nécessaire : 
+- mettez une clé primaire sur l'atribut IDECR */
+
+alter table ecrivain add constraint pk_ecrivain primary key (idecr);
+
+/* - mettez une clé étrangère sur CHEF_DE_FILE qui pointe sur la même table */
+
+alter table ecrivain add constraint fk_ecrivain foreign key (chef_de_file) references ecrivain(idecr);
+
+/* 4. Modifier encore la table écrivain en lui supprimant la colonne genre_id */
+alter table ecrivain drop column genre_id;
+
+/* 5. Affichez le contenu de votre table (avec une requête select *) et les contraintes qui sont possée avec l'outil graphique */
+select *
+from ecrivain;
+
+/* 6. Effacez un écrivain qui vous déplaît ou que vous ne connaissez pas en inquant le son nom dans la partie WHERE */
+delete from ecrivain
+where enom = 'Perrault';
+/* s'il y a une erreur qui apparait expliquer pourquoi elle apparait */
+-- cle étrangère qui pointe sur cet enregistrement
+/* corrigez cette erreur */
+update ecrivain 
+set chef_de_file = NULL
+where chef_de_file = (select idecr from ecrivain where enom = 'Perrault');
+
+delete from ecrivain 
+where enom = 'Perrault';
+
+/* 7. Insérer dans la table ECRIVAIN un nouvel écrivain (que vous aimez bien) */
+
+insert into ecrivain (idecr,enom, pnom, sexe, date_n, pays_n, livres_vendus)
+values (2030, 'Paz', 'Octavio', 'H', to_date('31/03/1941', 'dd/mm/yyyy'),'Mexique', 22000);
+
+-- vérif de l'insertion
+select *
+from ecrivain;
+
+
+/* 8. modéliser le fait qu'un écrivain écrit des livres et qu'un livre esr peuplé des personnages. Un livre a un seul auteur. 
+Le modèle sous forme d'iamge (photo ou autre document numérique est à déposer sur capus */
+
+/* 9. Créez de toute pièce une nouvelle table OEUVRE censée garder les infomrations sur une oeuvre d'écrivain */
+
+CREATE TABLE OEUVRE 
+   (IDOV NUMBER(6,0), 
+	ECR_ID NUMBER(4,0), 
+	TITRE VARCHAR2(40 BYTE), 
+	ANNEE_PARUTION NUMBER(4,0), 
+	 CONSTRAINT PK_OEUVRE PRIMARY KEY (IDOV), 
+	 CONSTRAINT FK_OEUVRE FOREIGN KEY (ECR_ID)
+	  REFERENCES ECRIVAIN(IDECR) ENABLE
+   );
+
+/* 10. Créez aussi une table PERSONNAGE. Pour les deux tables prenez soin de mettre des clés primaire et des clés étrabgère */
+
+CREATE TABLE PERSONNAGE 
+   (IDPER NUMBER(6,0), 
+	OV_ID NUMBER(4,0), 
+	NOM VARCHAR2(40 BYTE), 
+	SEXE CHAR(1 BYTE) NOT NULL ENABLE, 
+	 CONSTRAINT PK_PERSONNAGE PRIMARY KEY (IDPER), 
+	 CONSTRAINT FK_PERSONNAGE FOREIGN KEY (OV_ID)
+	  REFERENCES OEUVRE(IDOV) 
+   );
+
+/* 11. Insérez des enregistrements dans les tables OEUVRE et PERSONNAGE */
+insert into oeuvre values(31, 7698, 'Cent ans de solitude', 1967);
+
+insert into personnage values (1080, 31, 'Aureliano Buendia', 'M');
+insert into personnage values (1090, 31, 'Ursula Igauran', 'F');
+insert into personnage values (1010, 31, 'Jose Arcadio Buendia', 'M');
+
+/* 12. Tentez de insérer des enregistrements avec une clé étrangère qui n'existe pas dans la table référencée. Interprétez ce qui se passe */
+
+insert into personnage values (2080, 39, 'Aureliano Buendia', 'M'); -- l'oevre 39 n'existe pas 
+-- pas d'insertion, message explicite sur la clé étrangère qui n'est pas satisfaite;
+
+/* 13. Tentez d'effacer une oevre pour laquelle vous avez saisi des personnages */
+
+delete from oeuvre
+where idov = 31;
+
+/* 14. affichez pour chaque écrivain le nombre de personnages saisis dans la table PERSONNAGE, 0 pour ceux qui n'ont pas  */
+
+select e.pnom || ' ' || e.enom, count(p.idper)
+from ecrivain e
+left join oeuvre o
+on e.idecr = o.ecr_id
+left join  personnage p
+on p.ov_id = o.idov
+group by e.pnom || ' ' || e.enom;
+
+/* 15. Affichez le nombre d'enregistrement de la table ECRIVAIN qui n'ont rien de saisi pour l'attribut VALEUR */
+
+select count(*)
+from ecrivain
+where valeur is null;
+
+/* 16. Passez un mode AUTOCOMMIT OFF. , après une mise à jour correcte faire COMMIT; si la mise à jour n'est pas correcte faite ROLLBACK; */
+SET AUTOCOMMIT OFF;
+
+/* 17. pour les enregistrements comptés dans la requête précédente, mettez 0 à la place de la valeur NUNLL */
+
+update ecrivain
+set valeur = nvl(valeur, 0);
+-- autre version
+update ecrivain 
+set valeur = 0
+where valeur is null;
+
+commit;
+
+/* 18. Faites une mise à jour de l'attribut LIVRES_VENDUS en l'augmentant partout de 25% */
+
+update ecrivain
+set livres_vendus = floor(livres_vendus * 1.25);
+commit;
+
+/* 19. Faites une mise à jour de l'attribut VALEUR en l'augmentant du nombre de personnages présents dans la base */
+
+select *
+from ecrivain;
+
+update ecrivain e
+set valeur = valeur  + (select nvl(count(p.idper), 0)
+                            from personnage p
+                            join oeuvre o
+                            on p.ov_id = o.idov
+                            where o.ecr_id = e.idecr);
+commit;
+
+
+  

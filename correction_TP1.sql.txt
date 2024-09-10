@@ -1,0 +1,103 @@
+
+
+
+-- TP : correction du TP1
+-- Date : novembre 2023 //mettre la bonne date
+-- Auteurs : Mihaela
+
+/* 1. Affichez la structure, puis le contenu de la table ECRIVAIN */
+
+desc ecrivain;
+
+select *
+from ecrivain;
+
+
+
+/* 2. Déterminez le nombre d'enregistrements  de la table écrivain. */
+select count(*)
+from ecrivain;
+
+
+/* 3. Affichez le nombre d'écrivains nés en France */
+
+select count(*)
+from ecrivain
+where pays_n = 'France';
+
+/* 4. Affichez le nombre d'écrivains né dans un pyas de votre choix autre que la France. */
+
+
+select count(*)
+from ecrivain
+where pays_n = 'Espagne';
+
+/* 5. Affichez explicitement les écrivains nés dans un pays que vous avez choisi. */
+select *
+from ecrivain 
+where pays_n = 'Espagne';
+
+/* 6. Affichez la même liste qu'au point précédent en choisissant uniquement le prénom et le nom qui apparaitront 
+sous la forme 'Marie DUPONT', à savoir Prénom, suivi d'un espace, suivi du nom en majuscule; cette colonne s'appelera 'Ecrivain' */
+select pnom || ' ' || upper(enom) as Ecrivain
+from ecrivain 
+where pays_n = 'Espagne';
+
+/* 7. affichez tous les ecrivains avec leur nom, prénom et leur date de naissance */
+select pnom || ' ' || upper(enom) as Ecrivain, date_n
+from ecrivain ;
+/* si les dates affichées vous semblent bizarres faites la commande : */
+ALTER SESSION SET nls_date_format='dd / mm / yyyy';
+/* ré-executez la requête antérieure */
+
+/* 8. affichez la même liste qu'au point précédent en la triant selon la date de naissance, en ordre croissant, puis en ordre décroissant */
+
+select pnom || ' ' || upper(enom) as Ecrivain, date_n
+from ecrivain 
+order by date_n;
+
+-- même chose
+select pnom || ' ' || upper(enom) as Ecrivain, date_n
+from ecrivain 
+order by 2;
+
+--ordre décroissant
+select pnom || ' ' || upper(enom) as Ecrivain, date_n
+from ecrivain 
+order by 2 desc;
+
+/* 9. Affichez les écrivains (prénom/nom) avec leur mois de naissance en toute lettre  et triez la dans l'ordre logique : Janvier, février, Mars ...*/
+/* (utilisez la fonction TO_CHAR et un patron de conversion de la date */
+
+select pnom || ' ' || upper(enom) as Ecrivain, to_char(date_n, 'Month')
+from ecrivain 
+order by to_char(date_n, 'mm');
+
+/* 10. Affichez chaque écrivain (prénom/nom) et son nombre de livres vendus */
+
+select pnom || ' ' || upper(enom) as Ecrivain, livres_vendus
+from ecrivain;
+
+/* 11. Affiches les nombres maximal et minimal des livre vendus */
+
+select max(livres_vendus) , min(livres_vendus)
+from ecrivain;
+
+/* 12. * Affichez l'écrivain avec le plus de livres vendus */
+
+select pnom || ' ' || upper(enom) as Ecrivain, livres_vendus
+from ecrivain
+where livres_vendus = (select max(livres_vendus)
+    from ecrivain);
+
+/* 13. Affichez les écrivain qui porte un prénom qui vous plaît, ou qui commence par une syllabe qui vous plaît 'Mi', par exemple. */
+
+select pnom || ' ' || upper(enom) as Ecrivain
+from ecrivain
+where pnom = 'Miguel';
+
+select pnom || ' ' || upper(enom) as Ecrivain
+from ecrivain
+where pnom like 'Mi%';
+
+

@@ -1,0 +1,119 @@
+--- correction TP4
+
+drop table ARBRE;
+-- on efface une éventuelle table
+
+/* importation faite */
+-- vérification de la taille de la table
+
+select count(*)
+from arbre;
+
+/* clé primaire */
+
+alter table arbre add constraint pk_arbre2023 primary key (idbase);
+
+commit;
+
+/* détection des collones non-intéressantes */.
+
+desc arbre;
+
+select count(*)
+from arbre;
+
+select count(distinct type_emplacement)
+from arbre;
+-- colonne avec une seule valeur
+
+select distinct type_emplacement
+from arbre;
+
+alter table arbre drop column type_emplacement;
+
+--- si l'importation n'a pasété faite, supprimer egalement la colonne idemplacement
+
+
+select distinct stade
+from arbre;
+-- par exemple cette colonne est intéressante à la riguer
+
+---
+--- La table des arrondissements
+
+select *
+from sys.arrondissement;
+
+alter table arbre add constraint FK_ARBRE_2023 Foreign Key (arrondissement) references sys.arrondissement(nom_arr); 
+
+--
+-- la table DENOMINATION_ARBRE
+
+drop table denomination_arbre;
+create table DENOMINATION_ARBRE (libelle varchar2(30), genre varchar2(26), espece varchar2(30), age_limite number(3), besoin_elagage number(1), feuilles_tombantes number(1));
+
+alter table denomination_arbre add constraint pk_den_arbre primary key (libelle, genre, espece);
+
+
+select distinct espece, libelle, genre from arbre;
+
+-- libelle à NULL et même espece à null
+-- on corrige
+
+select distinct nvl(espece, '-'), nvl(libelle, '-'), nvl(genre, '-') from arbre;
+
+insert into denomination_arbre (espece, libelle, genre)
+select distinct nvl(espece, '-'), nvl(libelle, '-'), nvl(genre, '-')
+from arbre;
+
+commit;
+
+
+alter table arbre add constraint fk2_arbre_2023 foreign key (espece, libelle, genre) references denomination_arbre(espece, libelle, genre);
+
+select count(*)
+from arbre;
+
+-----------------
+-- Le grand ménage
+-----------------
+
+select min(circonference), max(circonference), min(hauteur), max(hauteur)
+from arbre;
+
+--- commentaires : des circonferences et hauteur à 0. la huteau max est aussi fantaissiste
+
+select 1650/3.14/100 
+from dual;
+-- la circonférence est plausible
+
+-- 
+select count(*)
+from arbre 
+where hauteur = 0;
+-- il t en a plus de 24000
+
+delete from arbre where hauteur = 0;
+commit;
+
+
+select hauteur from arbre order by 1 desc;
+
+-- on élimine les arbres qui ont plus de 70m
+
+delete from arbre
+where hauteur >=70;
+
+commit;
+
+---> les circonférences, on élimine uniquement celles <= 2
+
+delete from arbre
+where circonference <= 2;
+
+commit;
+
+select count(*) from arbre;
+
+-- je reste avec 177617 arbres
+
